@@ -16,3 +16,13 @@ output "zigbee2mqtt_certificate_private_key" {
   value = module.thing_zigbee2mqtt.aws_iot_certificate_private_key
   sensitive = true
 }
+
+output "scd30_certificate_pem" {
+  value = module.thing_scd30.aws_iot_certificate_certificate_pem
+  sensitive = true
+}
+
+output "scd30_certificate_private_key" {
+  value = module.thing_scd30.aws_iot_certificate_private_key
+  sensitive = true
+}

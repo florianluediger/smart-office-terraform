@@ -1,6 +1,7 @@
 locals {
   database_name = "smart_office"
   table_zigbee2mqtt = "zigbee2mqtt"
+  table_scd30 = "scd30"
 }
 
 terraform {
@@ -47,10 +48,9 @@ module "thing_zigbee2mqtt" {
 # Create role that can write to all timestream databases
 module "iam_timestream_writer" {
   source = "./modules/aws-iam-timestream-writer"
-  table_arn = module.timestream_sensordata.table_arn
 }
 
-# Create role to save all messages from zigbee2mqtt into the timestream database
+# Create rule to save all messages from zigbee2mqtt into the timestream database
 module "iot_rule_zigbee2mqtt_to_timestream" {
   source = "./modules/aws-iot-rule"
   name = "Zigbee2MqttToTimestream"
@@ -66,4 +66,31 @@ module "iot_rule_zigbee2mqtt_to_timestream" {
 # This will be used by the grafana dashboard
 module "iam_timestream_full_access" {
   source = "./modules/aws-iam-timestream-full-access"
+}
+
+# Create timestream table for saving the data provided by the SCD30 sensors
+module "timestream_table_scd30" {
+  source = "./modules/aws-timestream-table"
+  database_name = local.database_name
+  table_name = local.table_scd30
+}
+
+# Create thing to represent all data that is provided by scd30 sensors
+# This will also create a certificate that can be used to connect with the thing via mqtt
+module "thing_scd30" {
+  source = "./modules/aws-iot-thing"
+  name   = "scd30"
+  policy_name = module.iot_admin_policy.policy_name
+}
+
+# Create rule to save all messages from scd30 sensors into the timestream database
+module "iot_rule_scd30_to_timestream" {
+  source = "./modules/aws-iot-rule"
+  name = "Scd30ToTimestream"
+  database_name = local.database_name
+  table_name = local.table_scd30
+  sql = "SELECT * FROM 'scd30/#'"
+  role_arn = module.iam_timestream_writer.role_arn
+  dimension_name = "device"
+  dimension_value = "$${topic(2)}"
 }

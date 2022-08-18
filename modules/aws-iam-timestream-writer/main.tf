@@ -25,7 +25,7 @@ resource "aws_iam_role_policy" "TimestreamWriter" {
         "Action": [
           "timestream:WriteRecords"
         ],
-        "Resource": var.table_arn
+        "Resource": "*"
       },
       {
         "Effect": "Allow",
