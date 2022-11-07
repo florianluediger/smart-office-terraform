@@ -5,10 +5,18 @@ locals {
 }
 
 terraform {
+  backend "s3" {
+    bucket         = "smart-office-terraform-state"
+    encrypt        = "true"
+    key            = "terraform-remote-state/terraform.tfstate"
+    region         = "eu-central-1"
+    dynamodb_table = "terraform-states-lock-table"
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.16"
+      version = "~> 4.38"
     }
   }
 
@@ -17,6 +25,11 @@ terraform {
 
 provider "aws" {
   region = "eu-central-1"
+}
+
+# Create resources for holding the terraform state in aws
+module "terraform_state" {
+  source = "./modules/terraform-state"
 }
 
 # Create timestream database to save all kinds of sensor data
